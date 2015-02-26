@@ -299,7 +299,7 @@ function woocommerce_payhub_init() {
 				'tid' => $this->tid,
 				'first_name' => $order->billing_first_name,
 				'last_name' => $order->billing_last_name,
-				'phone' => $order->billing_phone,
+				'phone' => preg_replace('/[^0-9]/', '', $order->billing_phone),
 				'email' => $order->billing_email,
 				'address1' => $order->billing_address_1,
 				'address2' => $order->billing_address_2,
