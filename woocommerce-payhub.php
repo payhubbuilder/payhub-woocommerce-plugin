@@ -393,8 +393,12 @@ function woocommerce_payhub_init() {
 				}
 
 				$order->update_status('failed');
-				$order->add_order_note( __('Transaction Failed', 'woothemes') . ' (PayHub Response Code: ' . $ph_response_code);
-				$order->add_order_note( __('Transaction Failed', 'woothemes') . ' (Failed due to: ' . $ph_response_text);
+
+				$order_note = 'PayHub' . __('Transaction Failed:', 'woothemes') . "\n\n";
+				$order_note .= "Response Code: $ph_response_code\n";
+				$order_note .= "Response Text: $ph_response_text\n";
+				$order_note .= "Response Transaction ID: $ph_transaction_id\n";
+				$order->add_order_note($order_note);
 				
 				return;
 			}
@@ -408,4 +412,3 @@ function woocommerce_add_payhub_gateway( $methods ) {
 }
 
 add_filter('woocommerce_payment_gateways', 'woocommerce_add_payhub_gateway');
-		
