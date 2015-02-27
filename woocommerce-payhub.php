@@ -396,7 +396,7 @@ function woocommerce_payhub_init() {
 
 				$order->update_status('failed');
 
-				$order_note = 'PayHub' . __('Transaction Failed:', 'woothemes') . "\n\n";
+				$order_note = 'PayHub ' . __('Transaction Failed:', 'woothemes') . "\n\n";
 				$order_note .= "Response Code: $ph_response_code\n";
 				$order_note .= "Response Text: $ph_response_text\n";
 				$order_note .= "Response Transaction ID: $ph_transaction_id\n";
