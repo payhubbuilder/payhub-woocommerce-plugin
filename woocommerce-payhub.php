@@ -1,10 +1,10 @@
 <?php
 /*
-Plugin Name: WooCommerce PayHub Gateway Plugin
-Plugin URI: http://payhub.com/wiki
-Description: PayHub Inc. is a technology company that provides SAAS solutions and products that facilitate payment processing across a wide range of industries and devices.  We are a San Francisco Bay Area company, headquartered in San Rafael, California. We are a team of professionals with more than 35 years of combined electronic payment and financial industry and high tech expertise.
-Version: 1.0.8
-Author: EJ
+Plugin Name: PayHub Gateway Plugin for WooCommerce
+Plugin URI: http://developer.payhub.com/
+Description: This plugin allows you to accept credit card payments through PayHub in your WooCommerce storefront.
+Version: 1.0.11
+Author: PayHub
 */
 
 
@@ -87,7 +87,7 @@ function woocommerce_payhub_init() {
 
 		function ssl_check() {		
 			if (get_option('woocommerce_force_ssl_checkout') == 'no' && $this->enabled == 'yes') {
-				echo '<div class="error"><p>'.sprintf(__('PayHub is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout is not secure! Please enable SSL and ensure your server has a valid SSL certificate - PayHub is in live mode.', 'woothemes'), admin_url('admin.php?page=woocommerce')).'</p></div>';
+				echo '<div class="error"><p>'.sprintf(__('PayHub is enabled, but the <a href="%s">force SSL option</a> is disabled; your checkout is not secure! Please enable SSL and ensure your server has a valid SSL certificate.', 'woothemes'), admin_url('admin.php?page=woocommerce')).'</p></div>';
 			}
 		}
 

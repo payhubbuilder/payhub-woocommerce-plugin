@@ -1,10 +1,10 @@
 === PayHub Plugin For WooCommerce ===
-Contributors: EJ Costiniano, Lon Sun
+Contributors: EJ Costiniano, Lon Sun, PayHub
 Website: http://payhub.com
 Tags: woocommerce, payment, gateway, credit card, visa, mastercard
 Requires at least: 3.5
-Tested up to: 3.8.1
-Stable tag: 1.0.9 
+Tested up to: 4.1.1
+Stable tag: 1.0.11 
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -24,9 +24,22 @@ This plugin works specifically with the WooCommerce ecommerce plugin.  It allows
 * We now require SSL peer verification when sending a transaction request.
 * Added more helpful information to the read me, such as better configuration instructions and notes on security.
 
+= 1.0.10 =
+* Released on February 25, 2014
+* Minor changes for versioning.
+
+= 1.0.11 =
+* Released on February 26, 2015
+* Scrub telephone numbers before sending to PayHub API.
+* Fixed unsupported method issue on WC 2.3.5 that showed up when transactions failed.
+* Improved order note information on transaction failure.
+* Made changes to mitigate "Fatal error: Cannot redeclare supports()" error that was reported.  Was not able to recreate this issue locally.  Will need help validating this fix from users.
+* Improved layout of credit card fields on checkout form.
+* Other general and minor improvements.
+
 == Upgrade Notice ==
 
-= 1.9 =
+= 1.0.9 =
 This version improves security and fixes a critical issue for users on WooCommerce 2.1.x.  You should upgrade immediately.
 
 == Installation ==
