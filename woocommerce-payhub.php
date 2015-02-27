@@ -91,6 +91,13 @@ function woocommerce_payhub_init() {
 			}
 		}
 
+		/*
+		 * Check to see if a specific WC feature is supported.
+		 */			
+		function supports( $feature ) {
+			return apply_filters( 'woocommerce_payment_gateway_supports', in_array( $feature, $this->supports) ? true : false, $feature, $this);
+		}
+
 		/**
 		 * Check for version 2.1 or greater.  We only support 2.x so if this is false 
 		 * then the version should be 2.0.x
@@ -232,11 +239,6 @@ function woocommerce_payhub_init() {
 				</fieldset>
 
 			<?php
-			
-			function supports( $feature ) {
-				return apply_filters( 'woocommerce_payment_gateway_supports', in_array( $feature, $this->supports) ? true : false, $feature, $this);
-			}
-
 		}
 
 
