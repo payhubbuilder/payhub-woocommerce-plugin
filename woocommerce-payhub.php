@@ -387,7 +387,7 @@ function woocommerce_payhub_init() {
 				# We support WC 2.x and
 				# WooCommerce::add_error was removed in WC 2.3 and
 				# wc_add_notice was added in WC 2.1
-				if (self::isWcVersionTwoPointOneOrGreater()) {
+				if ($this->isWcVersionTwoPointOneOrGreater()) {
 					wc_add_notice($error_msg, 'error');
 				}
 				else {
