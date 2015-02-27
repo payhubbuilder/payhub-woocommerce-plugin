@@ -216,21 +216,25 @@ function woocommerce_payhub_init() {
         	?>
 
 				<fieldset>
-					<p class="form-row form-row-first">
+					<p class="form-row">
 						<label for="card_number"><?php echo __("Credit Card number", 'woocommerce') ?> <span class="required">*</span></label>
 						<input type="text" class="input-text" name="card_number" />
 					</p>
 					<div class="clear"></div>
-					<p class="form-row form-row-first">
+					<p class="form-row">
 						<label for="cc_exp_month"><?php echo __("Expiration date", 'woocommerce') ?> <span class="required">*</span></label>
+					</p>
+					<p class="form-row form-row-first">
 						<select name="card_exp_month" id="cc_exp_month">
 							<?php echo $month_select; ?>
 						</select>
+					</p>
+					<p class="form-row form-row-last">	
 						<select name="card_exp_year" id="cc_exp_year">
 							<?php echo $year_select; ?>
 						</select>
 					</p>
-					<p class="form-row form-row-last">
+					<p class="form-row">
 						<label for="card_cvv"><?php _e("Card security code", 'woocommerce') ?> <span class="required">*</span></label>
 						<input type="text" class="input-text" id="cc_cvv" name="card_cvv" maxlength="4" style="width:45px" />
 						<span class="help payhub_card_cvv_description"></span>
