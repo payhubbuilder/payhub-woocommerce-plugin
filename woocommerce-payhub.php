@@ -92,6 +92,19 @@ function woocommerce_payhub_init() {
 		}
 
 		/**
+		 * Check for version 2.1 or greater.  We only support 2.x so if this is false 
+		 * then the version should be 2.0.x
+		 */
+		function isWcVersionTwoPointOneOrGreater() {
+			global $woocommerce;
+			$newer_version_threshold = "2.1.0";
+
+			if (version_compare($woocommerce->version, $newer_version_threshold, ">=" )) return true;
+
+			return false;
+		}
+
+		/**
      	 * Initialize Gateway Settings Form Fields
      	 */
 	    function init_form_fields() {		    
@@ -341,10 +354,14 @@ function woocommerce_payhub_init() {
 
 			curl_close($ch);
 
-			$wooresponse = json_decode($raw, true);
+			$payhub_response = json_decode($raw, true);
 
-			if ($wooresponse['RESPONSE_CODE'] == "00") {
-				$order->add_order_note( __('Transaction completed', 'woothemes') . ' (PayHub Transaction ID: ' . $wooresponse['TRANSACTION_ID']);
+			$ph_transaction_id = $payhub_response['TRANSACTION_ID'];
+			$ph_response_code = $payhub_response['RESPONSE_CODE'];
+			$ph_response_text = $payhub_response['RESPONSE_TEXT'];
+
+			if ($ph_response_code == "00") {
+				$order->add_order_note( __('Transaction completed', 'woothemes') . ' (PayHub Transaction ID: ' . $ph_transaction_id);
 				
 				//$order->payment_complete();
 				$order->payment_complete();
@@ -363,11 +380,22 @@ function woocommerce_payhub_init() {
 					);
 			} 
 			else {
+				$error_msg = __('Payment Error:  ', 'woothemes') . "$ph_response_text ( $ph_response_code )";
+				
+				# We support WC 2.x and
+				# WooCommerce::add_error was removed in WC 2.3 and
+				# wc_add_notice was added in WC 2.1
+				if (self::isWcVersionTwoPointOneOrGreater()) {
+					wc_add_notice($error_msg, 'error');
+				}
+				else {
+					$woocommerce->add_error($error_msg);
+				}
+
 				$order->update_status('failed');
-				$woocommerce->add_error(__('Payment Error:  ', 'woothemes') . $wooresponse['RESPONSE_TEXT']);
-				$woocommerce->add_error(__('Payment Error:  ', 'woothemes') . $wooresponse['RESPONSE_CODE']);
-				$order->add_order_note( __('Transaction Failed', 'woothemes') . ' (PayHub Response Code: ' . $wooresponse['RESPONSE_CODE']);
-				$order->add_order_note( __('Transaction Failed', 'woothemes') . ' (Failed due to: ' . $wooresponse['RESPONSE_TEXT']);
+				$order->add_order_note( __('Transaction Failed', 'woothemes') . ' (PayHub Response Code: ' . $ph_response_code);
+				$order->add_order_note( __('Transaction Failed', 'woothemes') . ' (Failed due to: ' . $ph_response_text);
+				
 				return;
 			}
 		}
