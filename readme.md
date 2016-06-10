@@ -79,3 +79,4 @@ Alternatively, you can dig into the PayHub plugin itself and add the following k
 If you have any questions you can contact PayHub at:
 (415) 306-9476 from 8AM - 5PM PST M-F
 or email us at wecare@payhub.com
+
