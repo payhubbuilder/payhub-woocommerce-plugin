@@ -210,11 +210,10 @@ function woocommerce_payhub_init() {
 
 	        for($y = $year_now; $y < $year_now + 15; $y++) {
 	            $year = sprintf('%02d', $y);
-	            $year_select .= "<option value='" . $year . "' " . $select . ">" . $year . "</option>\n";
+	            $year_select .= "<option value='" . $year . "' " . $select . ">20" . $y . "</option>\n";
 	        }
         	
         	?>
-
 				<fieldset>
 				  <div class="form-row" style="clear:both;">
 				    <label for="card_number"><?php echo __("Credit Card number", 'woocommerce') ?> <span class="required">*</span></label>
@@ -224,26 +223,28 @@ function woocommerce_payhub_init() {
 				    <label for="card_expiry_holder"><?php echo __("Expiration date", 'woocommerce') ?> <span class="required">*</span></label>
 				    <div id="card_expiry_holder">	
 				    <div class="form-row woocommerce-validated" >
-				      <label for="card_exp_month"><?php echo __("Exp. Month", 'woocommerce') ?> </label>	
+					<div style="float:left;">
+				      <label for="card_exp_month"><?php echo __("Month", 'woocommerce') ?> </label>	
 				      <select name="card_exp_month" id="cc_exp_month">
 				      <?php echo $month_select; ?>
 				      </select>
-				    </div>
-				    <div class="form-row woocommerce-validated" >
-				      <label for="card_exp_year"><?php echo __("Exp. Year", 'woocommerce') ?> </label>	
+					</div>
+					<div style="float:left;margin-left:10%;">
+					<label for="card_exp_year"><?php echo __("Year", 'woocommerce') ?> </label>	
 				      <select name="card_exp_year" id="cc_exp_year">
 				      <?php echo $year_select; ?>
 				      </select>
+					</div>
 				    </div>
+				    
 				    </div>		
 				  </div>
-				  <div class="form-row" style="clear:both;">
+				  <div class="form-row" style="clear:both;padding-top: 5%;">
 				    <label for="card_cvv"><?php _e("Card security code", 'woocommerce') ?> <span class="required">*</span></label>
 				    <input type="text" class="input-text" id="cc_cvv" name="card_cvv" maxlength="4" style="min-width: 40px;max-width: 80px;text-align: center;" />
 				    <span class="help payhub_card_cvv_description"></span>
 				  </div>         
 				</fieldset>
-
 			<?php
 		}
 
