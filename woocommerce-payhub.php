@@ -3,10 +3,11 @@
 Plugin Name: PayHub Gateway Plugin for WooCommerce
 Plugin URI: http://developer.payhub.com/
 Description: This plugin allows you to accept credit card payments through PayHub in your WooCommerce storefront.
-Version: 1.0.11
+Version: 2.0.1
 Author: PayHub
 */
-
+$path_to_IncludeClases="/com/payhub/ws/extra/includeClasses.php";
+include_once $path_to_IncludeClases;
 
 add_action('plugins_loaded', 'woocommerce_payhub_init', 0);
 
@@ -41,23 +42,36 @@ function woocommerce_payhub_init() {
 				'American Express'
 			)
 		);
-		var $api_username;
+		//var $api_username;
 		var $api_password;
 		var $orgid;
 		var $demo;
 		var $terminal_id;
+
+		var $api_password_demo;
+		var $org_id_demo;
+		var $terminal_id_demo;
+
+
 		var $card_data;
 		var $card_cvv;
 		var $card_exp_month;
 		var $card_exp_year;
 		var $response;
 
+
 		function __construct() { 				
 			$this->id	= 'payhub';
 			$this->method_title 	= __('PayHub', 'woothemes');
 			$this->icon = WP_PLUGIN_URL . "/" . plugin_basename( dirname(__FILE__)) . '/PoweredbyPayHubCards.png';
-			$this->has_fields = true;
+			$this->has_fields=true;
 			
+			$this->supports = array(
+									  'default_credit_card_form',
+									  'refunds'
+									);
+
+			//$this->supports[] = 'default_credit_card_form';
 			// Load the form fields
 			$this->init_form_fields();
 			
@@ -69,10 +83,15 @@ function woocommerce_payhub_init() {
 			$this->description 		= $this->settings['description'];
 			$this->demo = $this->settings['demo'];
 			$this->enabled 			= $this->settings['enabled'];
-			$this->api_username 	= $this->settings['api_username'];
+			//$this->api_username 	= $this->settings['api_username'];
 			$this->api_password 	= $this->settings['api_password'];
 			$this->orgid 	= $this->settings['orgid'];
 			$this->tid 	= $this->settings['terminal_id'];
+
+
+			$this->api_password_demo 	= $this->settings['api_password_demo'];
+			$this->org_id_demo 	= $this->settings['org_id_demo'];
+			$this->terminal_id_demo 	= $this->settings['terminal_id_demo'];
 			
 
 			// Hooks
@@ -142,16 +161,16 @@ function woocommerce_payhub_init() {
 					'description' => __( 'This controls the description which the user sees during checkout.', 'woothemes' ), 
 					'default' => 'We accept Visa, Mastercard, & Discover'
 					),  
-				'api_username' => array(
-					'title' => __( 'API Username', 'woothemes' ), 
-					'type' => 'text', 
-					'description' => __( 'Get your API Login from PayHub.', 'woothemes' ), 
-					'default' => ''
-					), 
+				// 'api_username' => array(
+				// 	'title' => __( 'API Username', 'woothemes' ), 
+				// 	'type' => 'text', 
+				// 	'description' => __( 'Get your API Login from PayHub.', 'woothemes' ), 
+				// 	'default' => ''
+				// 	), 
 				'api_password' => array(
-					'title' => __( 'API Password', 'woothemes' ), 
+					'title' => __( '3rd PartyAPI token', 'woothemes' ), 
 					'type' => 'text', 
-					'description' => __( 'Get your API Password from PayHub.', 'woothemes' ), 
+					'description' => __( 'Get your API token from PayHub.', 'woothemes' ), 
 					'default' => ''
 					),
 				'orgid' => array(
@@ -165,6 +184,28 @@ function woocommerce_payhub_init() {
 					'type' => 'text',
 					'description' => __( 'Get your terminal ID from PayHub.', 'woothemes' ),
 					'default' => '0000'
+					),				
+				'api_password_demo' => array(
+					'title' => __( '3rd PartyAPI token for Demo', 'woothemes' ), 
+					'type' => 'text', 
+					'description' => __( 'Get your API token from PayHub.', 'woothemes' ), 
+					'default' => '26c4296b-0e79-4ea5-941c-a81ece6e15a3'
+					),
+				'org_id_demo' => array(
+					'title' => __( 'OrgID for Demo', 'woothemes' ),
+					'type' => 'text',
+					'description' => __( 'This is your organization ID', 'woothemes' ),
+					'default' => '10002'
+					),
+				'terminal_id_demo' => array(
+					'title' => __( 'Terminal ID for Demo', 'woothemes' ),
+					'description' => __( 'Get your terminal ID from PayHub.', 'woothemes' ),
+					'type' => 'text',
+					'default' => '2'
+					),
+				'testConnection' => array(
+					'title' => __( 'Test Connection', 'woothemes' ), 
+					'type' => 'button'
 					)
 				);
 	    }
@@ -186,230 +227,193 @@ function woocommerce_payhub_init() {
 		/**
 	     * Payment form on checkout page
 	     */
-		function payment_fields() {
-			if ( $description = $this->get_description() )
-				echo wpautop( wptexturize( $description ) );
-			if ( $this->supports( 'default_credit_card_form' ) )
-				echo $this->credit_card_form();
-
-			global $woocommerce;
-
-	        $month_select = "";
-	        for ($i=0; $i < 12; $i++) {
-	            $month = sprintf('%02d', $i+1);
-	            if($month == date('m'))
-	                $select = 'selected ';
-	            else
-	                $select = '';
-	            $month_select .= "<option value='" . $month . "' " . $select . ">" . $month . "</option>\n";
-	        }    
-        
-	        // create options for valid from and expires on years
-	        $year_now = date('y');
-	        $year_select = "";
-
-	        for($y = $year_now; $y < $year_now + 15; $y++) {
-	            $year = sprintf('%02d', $y);
-	            $year_select .= "<option value='" . $year . "' " . $select . ">20" . $y . "</option>\n";
-	        }
-        	
-        	?>
-				<fieldset>
-				  <div class="form-row" style="clear:both;">
-				    <label for="card_number"><?php echo __("Credit Card number", 'woocommerce') ?> <span class="required">*</span></label>
-				    <input type="text" class="input-text" name="card_number" style="max-width: 20em;" />
-				  </div>
-				  <div class="form-row" style="clear:both;">
-				    <label for="card_expiry_holder"><?php echo __("Expiration date", 'woocommerce') ?> <span class="required">*</span></label>
-				    <div id="card_expiry_holder">	
-				    <div class="form-row woocommerce-validated" >
-					<div style="float:left;">
-				      <label for="card_exp_month"><?php echo __("Month", 'woocommerce') ?> </label>	
-				      <select name="card_exp_month" id="cc_exp_month">
-				      <?php echo $month_select; ?>
-				      </select>
-					</div>
-					<div style="float:left;margin-left:10%;">
-					<label for="card_exp_year"><?php echo __("Year", 'woocommerce') ?> </label>	
-				      <select name="card_exp_year" id="cc_exp_year">
-				      <?php echo $year_select; ?>
-				      </select>
-					</div>
-				    </div>
-				    
-				    </div>		
-				  </div>
-				  <div class="form-row" style="clear:both;padding-top: 5%;">
-				    <label for="card_cvv"><?php _e("Card security code", 'woocommerce') ?> <span class="required">*</span></label>
-				    <input type="text" class="input-text" id="cc_cvv" name="card_cvv" maxlength="4" style="min-width: 40px;max-width: 80px;text-align: center;" />
-				    <span class="help payhub_card_cvv_description"></span>
-				  </div>         
-				</fieldset>
-			<?php
-		}
 
 
-		/**
-	     * Validate the payment form
-	     */
-		function validate_fields() {		
-			#$card_data 		= isset($_POST['payjunction_card_type']) ? $_POST['payjunction_card_type'] : '';
-			$card_data 			= isset($_POST['card_number']) ? $_POST['card_number'] : '';
-			$card_cvv 			= isset($_POST['card_cvv']) ? $_POST['card_cvv'] : '';
-			$card_exp_month		= isset($_POST['card_exp_month']) ? $_POST['card_exp_month'] : '';
-			$card_exp_year 		= isset($_POST['card_exp_year']) ? $_POST['card_exp_year'] : '';
-			
-			// Check card security code
-			/*
-			if(!ctype_digit($card_cvv)) {
-				$woocommerce->add_error(__('Card security code is invalid (only digits are allowed)', 'woothemes'));
-				return false;
-			}
-	
-			
-			if((strlen($card_cvv) != 3 && in_array($card_type, array('Visa', 'MasterCard', 'Discover'))) || (strlen($card_csc) != 4 && $card_type == 'American Express')) {
-				$woocommerce->add_error(__('Card security code is invalid (wrong length)', 'woothemes'));
-				return false;
-			}
-			
-	
-			// Check card expiration data
-			if(!ctype_digit($card_exp_month) || !ctype_digit($card_exp_year) ||
-				 $card_exp_month > 12 ||
-				 $card_exp_month < 1 ||
-				 $card_exp_year < date('Y') ||
-				 $card_exp_year > date('Y') + 20
-			) {
-				$woocommerce->add_error(__('Card expiration date is invalid', 'woothemes'));
-				return false;
-			}
-	
-			// Check card number
-			$card_number = str_replace(array(' ', '-'), '', $card_number);
-	
-			if(empty($card_number) || !ctype_digit($card_number)) {
-				$woocommerce->add_error(__('Card number is invalid', 'woothemes'));
-				return false;
-			}
-			*/
-
-			return true;
-		}
+		
 
 		/**
 	 	 * Add the Gateway to WooCommerce
 	 	 **/
-		function process_payment( $order_id ) {
+		function process_payment( $order_id ) {	
 			global $woocommerce;
-			$order = new WC_Order( $order_id );
-
-			$mode = $this->demo;
-			$post_url = "https://checkout.payhub.com/invoice/transaction";
-
+			$order = new WC_Order( $order_id );	
+			$mode = $this->demo;								
+			//Defining data for the SALE transaction
+			// Merchant data (obtained from the payHub Virtual Terminal (3rd party integration)
+			$merchant = new Merchant();
+			
 			if ($mode == "yes") {
-				$mode = "demo";
+				$WsURL="https://sandbox-api.payhub.com/api/v2/";
+				$oauth_token = $this->api_password_demo;
+				$merchant->setOrganizationId($this->org_id_demo);
+				$merchant->setTerminalId($this->terminal_id_demo);
 			} 
 		    else {
-				$mode = "live";
+				$WsURL="https://dc1-api.payhub.com/api/v2/";
+				$oauth_token = $this->api_password;
+				$merchant->setOrganizationId($this->orgid);
+				$merchant->setTerminalId($this->tid);
+			}
+			//Defining the Web Service URL
+			//$WsURL="https://staging-api.payhub.com/api/v2/";
+			
+
+			// bill data
+			$bill= new Bill();
+			$bill->setBaseAmount((int)$order->order_total);
+			$bill->setShippingAmount((int)$order->get_total_shipping());
+			$bill->setTaxAmount((int)$order->get_total_tax());
+			$bill->setNote( $order_id . ", " . $order->user_id);
+			
+
+
+			if(validate_fields()){
+				//Credit card data
+				$card_data = new CardData();
+
+				$x_card_no = str_replace( array(' ', '-' ), '', $_POST['payhub-card-number'] );
+				$x_card_cvv=(isset($_POST['payhub-card-cvc'])) ? $_POST ['payhub-card-cvc'] : '';
+
+				$x_exp_date_aux=isset($_POST['payhub-card-expiry']) ? explode ("/",$_POST['payhub-card-expiry']) :  array('','');
+				$card_exp_month		=  str_replace( array(' ', '-' ), '',$x_exp_date_aux[0]);
+				$card_exp_year 		=  str_replace( array(' ', '-' ), '',$x_exp_date_aux[1]);
+
+				if(strlen($card_exp_year)==2){
+					//this may happen since the view validates for 2 or 4 years digits
+					$card_exp_year='20'.$card_exp_year;
+				}	
+
+
+				$x_exp_date=$card_exp_year.$card_exp_month;
+
+				$card_data->setCardNumber($x_card_no);
+				$card_data->setCardExpiryDate($x_exp_date);
+				$card_data->setCvvData($x_card_cvv);
+				$card_data->setBillingAddress1($order->billing_address_1);
+				$card_data->setBillingAddress2($order->billing_address_2);
+				$card_data->setBillingCity($order->billing_city);
+				$card_data->setBillingState($order->billing_state);
+				$card_data->setBillingZip($order->billing_postcode);
+				// Customer data
+				$customer = new Customer();
+				$customer->setFirstName($order->billing_first_name);
+				$customer->setLastName($order->billing_last_name);
+				$customer->setEmailAddress($order->billing_email);
+				$customer->setPhoneNumber(preg_replace('/[^0-9]/', '', $order->billing_phone));			
+				$customer->setPhoneType("M");
+
+				$object = new Sale($merchant,$customer,$bill,$card_data);
+				//wc_add_notice(json_encode($object), 'error');
+				$transaction = new TransactionManager($merchant,$WsURL,$oauth_token);
+				$result = $transaction->doSale($object);
+				//wc_add_notice(json_encode($result), 'error');
+
+
+				$ph_transaction_id='';	
+				if($result->getErrors()==null){
+
+				    $ph_transaction_id = $result->getSaleResponse()->getSaleId();
+					$order->add_order_note( __('Transaction completed', 'woothemes') . ' PayHub Transaction ID: ' . $ph_transaction_id);			
+					$order->payment_complete($ph_transaction_id);
+								
+					// Remove cart
+								
+					//$woocommerce->cart->empty_cart();
+					// Empty awaiting payment session
+					unset($_SESSION);
+
+					// Return thank you page redirect
+					return array(
+						'result' 	=> 'success',
+						#'redirect'	=> add_query_arg('key', $order->order_key, add_query_arg('order', $order_id, get_permalink(get_option('woocommerce_thanks_page_id'))))
+						'redirect' => $this->get_return_url($order)
+						);
+				}else{
+					
+					$ph_response_code = $result->getErrors()[0]->code;
+					$ph_response_text = $result->getErrors()[0]->reason;
+					$error_msg = __('Payment Error:  ', 'woothemes') . "$ph_response_text ( $ph_response_code )";
+								
+					# We support WC 2.x and
+					# WooCommerce::add_error was removed in WC 2.3 and
+					# wc_add_notice was added in WC 2.1
+					if ($this->isWcVersionTwoPointOneOrGreater()) {
+						wc_add_notice($error_msg, 'error');
+					}
+					else {
+						$woocommerce->add_error($error_msg);
+					}
+
+					$order->update_status('failed');
+
+					$order_note = 'PayHub ' . __('Transaction Failed:', 'woothemes') . "\n\n";
+					$order_note .= "Response Code: $ph_response_code\n";
+					$order_note .= "Response Text: $ph_response_text\n";
+					
+					$order->add_order_note($order_note);
+								
+					return;
+				}
+			}else{
+				return;
+			}
+		}
+
+
+		public function process_refund( $order_id, $amount = null,$reason = ''  ) {
+		 	$mode = $this->demo;		
+		 	$order = wc_get_order( $order_id );
+
+		 	$transaction_id = get_post_meta($order_id, '_transaction_id', true);
+			
+			$merchant = new Merchant();
+			
+			if ($mode == "yes") {
+				$WsURL="https://sandbox-api.payhub.com/api/v2/";
+				$oauth_token = $this->api_password_demo;
+				$merchant->setOrganizationId($this->org_id_demo);
+				$merchant->setTerminalId($this->terminal_id_demo);
+			} 
+		    else {
+				$WsURL="https://dc1-api.payhub.com/api/v2/";
+				$oauth_token = $this->api_password;
+				$merchant->setOrganizationId($this->orgid);
+				$merchant->setTerminalId($this->tid);
 			}
 
-			$post_data = array(
-				'mode' => $mode,
-				'orgid' => $this->orgid,
-				'username' => $this->api_username,
-				'password' => $this->api_password,
-				'tid' => $this->tid,
-				'first_name' => $order->billing_first_name,
-				'last_name' => $order->billing_last_name,
-				'phone' => preg_replace('/[^0-9]/', '', $order->billing_phone),
-				'email' => $order->billing_email,
-				'address1' => $order->billing_address_1,
-				'address2' => $order->billing_address_2,
-				'city' => $order->billing_city,
-				'state' => $order->billing_state,
-				'zip' => $order->billing_postcode,
-				'note' => $order_id . ", " . $order->user_id,
-				'cc' => $_POST['card_number'],
-				'month' => $_POST['card_exp_month'],
-				'year' => $_POST['card_exp_year'],
-				'cvv' => $_POST['card_cvv'],
-				'amount' => $order->order_total,
-				'ship_to_name' => $order->billing_first_name . $order->billing_last_name,
-				'ship_address1' => $order->shipping_address_1,
-				'ship_address2' => $order->shipping_address_2,
-				'ship_city' => $order->shipping_city,
-				'ship_state' => $order->shipping_state,
-				'ship_zip' => $order->shipping_postcode
-				);
+			$bill= new Bill();
+			$bill->setBaseAmount((int)$amount);
+			$bill->setShippingAmount((int)$order->get_total_shipping());
+			$bill->setTaxAmount((int)$order->get_total_tax());
+			
+			$bill->setNote($reason);
+		
+			$object = new Refund($transaction_id,$merchant,"CREDIT_CARD",$bill);
+		    $transaction = new TransactionManager($merchant,$WsURL,$oauth_token);
+		    $result=$transaction->doRefund($object);
+			//wc_add_notice(json_encode($result), 'error');
+			
+			$ph_transaction_id='';	
+			if($result->getErrors()==null){
+			    $ph_transaction_id =$result->getLastRefundResponse()->getSaleTransactionId();
+			    $ph_refund_id = $result->getLastRefundResponse()->getRefundTransactionId();
+				$order->add_order_note( __('Transaction Refunded', 'woothemes') . ' PayHub Transaction ID: ' . $ph_transaction_id);
+				$order->add_order_note( __('Transaction Refunded', 'woothemes') . ' PayHub Refund ID: ' . $ph_refund_id);		
 
-			$post_fields = json_encode($post_data);
-			//var_dump($submit_data);
-			//var_dump($post_url);
-			// Setup the cURL request.
-			$ch = curl_init();
-			$c_opts = array(
-				CURLOPT_URL => $post_url,
-                CURLOPT_VERBOSE => 0,
-                CURLOPT_SSL_VERIFYHOST => 0,
-                CURLOPT_SSL_VERIFYPEER => true,
-                CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_POST => true,
-                CURLOPT_POSTFIELDS => $post_fields
-                );
-
-			curl_setopt_array($ch, $c_opts);
-			$raw = curl_exec($ch);
-
-			curl_close($ch);
-
-			$payhub_response = json_decode($raw, true);
-
-			$ph_transaction_id = $payhub_response['TRANSACTION_ID'];
-			$ph_response_code = $payhub_response['RESPONSE_CODE'];
-			$ph_response_text = $payhub_response['RESPONSE_TEXT'];
-
-			if ($ph_response_code == "00") {
-				$order->add_order_note( __('Transaction completed', 'woothemes') . ' (PayHub Transaction ID: ' . $ph_transaction_id);
+				$order->update_status('Refunded');	
+				return true;
+			}else{
 				
-				//$order->payment_complete();
-				$order->payment_complete();
-				
-				// Remove cart
-				
-				//$woocommerce->cart->empty_cart();
-				// Empty awaiting payment session
-				unset($_SESSION);
-
-				// Return thank you page redirect
-				return array(
-					'result' 	=> 'success',
-					#'redirect'	=> add_query_arg('key', $order->order_key, add_query_arg('order', $order_id, get_permalink(get_option('woocommerce_thanks_page_id'))))
-					'redirect' => $this->get_return_url($order)
-					);
-			} 
-			else {
-				$error_msg = __('Payment Error:  ', 'woothemes') . "$ph_response_text ( $ph_response_code )";
-				
-				# We support WC 2.x and
-				# WooCommerce::add_error was removed in WC 2.3 and
-				# wc_add_notice was added in WC 2.1
+				$ph_response_code = $result->getErrors()[0]->code;
+				$ph_response_text = $result->getErrors()[0]->reason;
+				$error_msg = __('Payment Error:  ', 'woothemes') . "$ph_response_text ( $ph_response_code )";							
 				if ($this->isWcVersionTwoPointOneOrGreater()) {
-					wc_add_notice($error_msg, 'error');
+					return new WP_Error( 'error', __( 'Refund Failed: '.$error_msg, 'woocommerce' ) );
 				}
 				else {
 					$woocommerce->add_error($error_msg);
 				}
-
-				$order->update_status('failed');
-
-				$order_note = 'PayHub ' . __('Transaction Failed:', 'woothemes') . "\n\n";
-				$order_note .= "Response Code: $ph_response_code\n";
-				$order_note .= "Response Text: $ph_response_text\n";
-				$order_note .= "Response Transaction ID: $ph_transaction_id\n";
-				$order->add_order_note($order_note);
-				
-				return;
+				return false;
 			}
 		}
 	}
@@ -420,4 +424,238 @@ function woocommerce_add_payhub_gateway( $methods ) {
 	return $methods;
 }
 
-add_filter('woocommerce_payment_gateways', 'woocommerce_add_payhub_gateway');
+add_filter('woocommerce_payment_gateways', 'woocommerce_add_payhub_gateway');	
+add_action( 'admin_footer', 'payhub_javascript_functions' ); // Write our JS below here
+
+
+
+/**
+ * Validate the payment form
+ */
+function validate_fields() {		
+	$card_number = str_replace( array(' ', '-' ), '', $_POST['payhub-card-number'] );
+	$card_cvv=(isset($_POST['payhub-card-cvc'])) ? $_POST ['payhub-card-cvc'] : '';
+	$x_exp_date_aux=isset($_POST['payhub-card-cvc']) ? explode ("/",$_POST['payhub-card-expiry']) :  array('','');
+	$card_exp_month		=  str_replace( array(' ', '-' ), '',$x_exp_date_aux[0]);
+	$card_exp_year 		=  str_replace( array(' ', '-' ), '',$x_exp_date_aux[1]);
+
+	
+	// Check card number
+	if(empty($card_number) || !ctype_digit($card_number)) {
+		wc_add_notice('Card number is required'.' '.$card_type , 'error');
+		return false;
+	}
+	
+	// Check card security code
+	
+	if(!ctype_digit($card_cvv)) {
+		wc_add_notice('Card security code is invalid (only digits are allowed)', 'error');
+		return false;
+	}
+	if(strlen($card_cvv) <3) {
+		wc_add_notice('Card security code, invalid length', 'error');
+		return false;
+	}
+
+	if(empty($card_exp_year)) {
+		wc_add_notice('Card expiration year is required', 'error');
+		return false;
+	}else{
+		if(strlen($card_exp_year)==1 ||strlen($card_exp_year)==3||strlen($card_exp_year)>4){
+			wc_add_notice('Card expiration year is invalid', 'error');
+			return false;
+		}
+
+		if(strlen($card_exp_year)==2){
+			if((int)$card_exp_year < (int)substr(date('Y'), -2)) {
+				wc_add_notice('Card expiration year is invalid 1', 'error');
+				return false;
+			}
+		}
+
+		if(strlen($card_exp_year)==4){
+			if((int)$card_exp_year < (int)date('Y')) {
+				wc_add_notice('Card expiration year is invalid', 'error');
+				return false;
+			}
+		}
+	}
+	if(empty($card_exp_month)) {
+		wc_add_notice('Card expiration mont is required','error');
+		return false;
+	}else{
+		if((int)$card_exp_month>12 || (int)$card_exp_month<1) {
+			wc_add_notice('Card expiration month is invalid', 'error');
+			return false;
+		}
+	}
+
+	
+
+	//wc_add_notice('Card number is invalid', 'error');
+	return true;
+}
+
+
+
+function payhub_javascript_functions() { 
+	?>
+	<script type="text/javascript" >
+	jQuery(document).ready(function($) {
+		jQuery("#woocommerce_payhub_testConnection").attr('value','Test your Connection (Not Tested)');
+		jQuery("#woocommerce_payhub_testConnection").css({
+						  'color':'#fff',
+						  'background-color':'#31b0d5',
+						  'border-color':'#269abc'
+						});
+
+		if(jQuery("#woocommerce_payhub_demo").is(':checked')){				
+				enableDemo();			
+	 		}else{
+	 			disableDemo();
+	 		}
+
+	 	jQuery("#woocommerce_payhub_demo").on("change",function(){	 	
+			if(jQuery("#woocommerce_payhub_demo").is(':checked')){
+				enableDemo();
+	 		}else{
+	 			disableDemo();
+	 		}
+		});
+
+		jQuery("#woocommerce_payhub_testConnection").on("click",function(){
+			jQuery("#woocommerce_payhub_testConnection").attr('value','Connecting');
+			jQuery("#woocommerce_payhub_testConnection").attr('style','');
+			jQuery("#woocommerce_payhub_testConnection").css({
+						  'color':'#fff',
+						  'background-color':'#ec971f',
+						  'border-color':'#d58512'
+						});
+
+			
+			var datas = {
+				mode:'live',
+				token:'',
+				org_id:'',
+				terminal_id:''
+			}
+			if(jQuery("#woocommerce_payhub_demo").is(':checked')){
+				datas.mode = 'demo';
+				datas.org_id= jQuery("#woocommerce_payhub_org_id_demo").val();
+				datas.terminal_id= jQuery("#woocommerce_payhub_terminal_id_demo").val();
+				datas.token=jQuery("#woocommerce_payhub_api_password_demo").val();
+	 		}else{
+				datas.mode = 'live';
+				datas.org_id= jQuery("#woocommerce_payhub_org_id").val();
+				datas.terminal_id= jQuery("#woocommerce_payhub_terminal_id").val();
+				datas.token=jQuery("#woocommerce_payhub_api_password").val();
+	 		}
+	 		url_action = "<?php echo admin_url('/admin-ajax.php'); ?>";
+      		jQuery.ajax({
+			  type:"POST",
+			  url: url_action,
+			  data: {
+			      action: "payhub_test_connection",
+			      data: datas
+			  },
+			  success:function(data){
+			  	data=JSON.parse(data);
+			  	if(data){
+			  		
+			  		jQuery("#woocommerce_payhub_testConnection").attr('style','');
+			  		jQuery("#woocommerce_payhub_testConnection").css({
+						  'color':'#fff',
+						  'background-color':'#5cb85c',
+						  'border-color':'#4cae4c'
+						});
+
+			  		jQuery("#woocommerce_payhub_testConnection").attr('value','Connected');
+			  	}else{
+			  		jQuery("#woocommerce_payhub_testConnection").attr('style','');
+			  		jQuery("#woocommerce_payhub_testConnection").css({
+						  "color":'#fff',
+						  'background-color':'#d9534f',
+						  'border-color':'#d43f3a'
+						});
+			  		jQuery("#woocommerce_payhub_testConnection").attr('value','Not Connected');
+			  	}
+			  },
+			  error: function(errorThrown){
+			    console.log(errorThrown);
+			  } 
+
+			});
+
+			return false;
+		});
+	});
+
+
+	function enableDemo(){
+		jQuery("#woocommerce_payhub_api_password").parent().parent().parent().hide();
+		jQuery("#woocommerce_payhub_orgid").parent().parent().parent().hide();
+		jQuery("#woocommerce_payhub_terminal_id").parent().parent().parent().hide();
+
+		jQuery("#woocommerce_payhub_api_password_demo").parent().parent().parent().show();
+		jQuery("#woocommerce_payhub_org_id_demo").parent().parent().parent().show();
+		jQuery("#woocommerce_payhub_terminal_id_demo").parent().parent().parent().show();
+	}
+	function disableDemo(){
+		jQuery("#woocommerce_payhub_api_password").parent().parent().parent().show();
+		jQuery("#woocommerce_payhub_orgid").parent().parent().parent().show();
+		jQuery("#woocommerce_payhub_terminal_id").parent().parent().parent().show();
+
+		jQuery("#woocommerce_payhub_api_password_demo").parent().parent().parent().hide();
+		jQuery("#woocommerce_payhub_org_id_demo").parent().parent().parent().hide();
+		jQuery("#woocommerce_payhub_terminal_id_demo").parent().parent().parent().hide();
+	}
+	</script> 
+	<?php
+}
+
+add_action('wp_ajax_payhub_test_connection', 'payhub_test_connection');
+
+function payhub_test_connection() {	
+		$data = $_POST['data'];
+		//Defining data for the SALE transaction
+			// Merchant data (obtained from the payHub Virtual Terminal (3rd party integration)
+		$merchant = new Merchant();
+
+		if ($data['mode'] == "demo") {
+			$WsURL="https://sandbox-api.payhub.com/api/v2/";
+		} 
+	    else {
+			$WsURL="https://dc1-api.payhub.com/api/v2/";
+		}
+
+		$curl = curl_init();
+
+		curl_setopt_array($curl, array(
+		  CURLOPT_URL => $WsURL,
+		  CURLOPT_RETURNTRANSFER => true,
+		  CURLOPT_ENCODING => "",
+		  CURLOPT_MAXREDIRS => 10,
+		  CURLOPT_TIMEOUT => 30,
+		  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+		  CURLOPT_CUSTOMREQUEST => "GET",
+		  CURLOPT_HTTPHEADER => array(
+		    "authorization: Bearer ".$data['token'],
+		    "cache-control: no-cache",
+		    "postman-token: 5f807105-4375-071e-b66f-dccd493b175d"
+		  ),
+		));
+
+		$response = curl_exec($curl);
+		$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+	    curl_close($request);
+	    //echo $httpcode;
+	    $data = json_decode($response, true);
+
+	    if ($httpcode>=200 && $httpcode< 400){
+	        echo json_encode(true);
+	    } else {
+	        echo json_encode(false);
+	    }					
+		wp_die();
+
+}
