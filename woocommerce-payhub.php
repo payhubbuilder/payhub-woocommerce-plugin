@@ -3,7 +3,7 @@
 Plugin Name: PayHub Gateway Plugin for WooCommerce
 Plugin URI: http://developer.payhub.com/
 Description: This plugin allows you to accept credit card payments through PayHub in your WooCommerce storefront.
-Version: 2.0.1
+Version: 1.0.12
 Author: PayHub
 */
 $path_to_IncludeClases="/com/payhub/ws/extra/includeClasses.php";
@@ -260,10 +260,10 @@ function woocommerce_payhub_init() {
 
 			// bill data
 			$bill= new Bill();
-			$bill->setBaseAmount((int)$order->order_total);
-			$bill->setShippingAmount((int)$order->get_total_shipping());
-			$bill->setTaxAmount((int)$order->get_total_tax());
-			$bill->setNote( $order_id . ", " . $order->user_id);
+			$bill->setBaseAmount($order->get_total() - $order->get_total_tax() - $order->get_total_shipping());
+			$bill->setShippingAmount($order->get_total_shipping());
+			$bill->setTaxAmount($order->get_total_tax());
+			$bill->setNote( "Order id: ".$order_id . ", User Id:" . $order->user_id);
 			
 
 
@@ -382,39 +382,46 @@ function woocommerce_payhub_init() {
 			}
 
 			$bill= new Bill();
-			$bill->setBaseAmount((int)$amount);
-			$bill->setShippingAmount((int)$order->get_total_shipping());
-			$bill->setTaxAmount((int)$order->get_total_tax());
-			
+			$bill->setBaseAmount($amount);			
+
 			$bill->setNote($reason);
 		
 			$object = new Refund($transaction_id,$merchant,"CREDIT_CARD",$bill);
 		    $transaction = new TransactionManager($merchant,$WsURL,$oauth_token);
-		    $result=$transaction->doRefund($object);
-			//wc_add_notice(json_encode($result), 'error');
-			
-			$ph_transaction_id='';	
-			if($result->getErrors()==null){
-			    $ph_transaction_id =$result->getLastRefundResponse()->getSaleTransactionId();
-			    $ph_refund_id = $result->getLastRefundResponse()->getRefundTransactionId();
-				$order->add_order_note( __('Transaction Refunded', 'woothemes') . ' PayHub Transaction ID: ' . $ph_transaction_id);
-				$order->add_order_note( __('Transaction Refunded', 'woothemes') . ' PayHub Refund ID: ' . $ph_refund_id);		
 
-				$order->update_status('Refunded');	
-				return true;
-			}else{
-				
-				$ph_response_code = $result->getErrors()[0]->code;
-				$ph_response_text = $result->getErrors()[0]->reason;
-				$error_msg = __('Payment Error:  ', 'woothemes') . "$ph_response_text ( $ph_response_code )";							
-				if ($this->isWcVersionTwoPointOneOrGreater()) {
-					return new WP_Error( 'error', __( 'Refund Failed: '.$error_msg, 'woocommerce' ) );
-				}
-				else {
-					$woocommerce->add_error($error_msg);
-				}
-				return false;
-			}
+		    $saleInfo = $transaction->getSaleInformation($transaction_id);
+
+		    if($saleInfo->getErrors()==null){
+		    		$status = $saleInfo->settlementStatus;
+		    		$nose=json_encode($saleInfo);
+		    		if($status=='Settled'){
+		    			$result=$transaction->doRefund($object);				
+						$ph_transaction_id='';	
+						if($result->getErrors()==null){
+						    $ph_transaction_id =$result->getLastRefundResponse()->getSaleTransactionId();
+						    $ph_refund_id = $result->getLastRefundResponse()->getRefundTransactionId();
+							$order->add_order_note( __('Transaction Refunded', 'woothemes') . ' PayHub Transaction ID: ' . $ph_transaction_id);
+							$order->add_order_note( __('Transaction Refunded', 'woothemes') . ' PayHub Refund ID: ' . $ph_refund_id);		
+
+							$order->update_status('Refunded');	
+							return true;
+						}else{
+							
+							$ph_response_code = $result->getErrors()[0]->code;
+							$ph_response_text = $result->getErrors()[0]->reason;
+							$error_msg = __('Payment Error:  ', 'woothemes') . "$ph_response_text ( $ph_response_code )";								
+							return new WP_Error( 'error', __( 'Refund Failed: '.$error_msg, 'woocommerce' ) );				
+						}
+		    		}else{
+		    			return new WP_Error( 'error', __( 'Refund Failed: Transaction has Not been Settled yet.', 'woocommerce' ) );
+		    		}
+		    		
+		    }else{
+		    	$ph_response_code = $saleInfo->getErrors()[0]->code;
+				$ph_response_text = $saleInfo->getErrors()[0]->reason;
+				$error_msg = __('Payment Error:  ', 'woothemes') . "$ph_response_text ( $ph_response_code )";								
+				return new WP_Error( 'error', __( 'Refund Failed: '.$error_msg, 'woocommerce' ) );
+		    }
 		}
 	}
 }

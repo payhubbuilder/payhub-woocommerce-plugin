@@ -18,6 +18,7 @@ class SaleResponseInformation
     private $cardDataInformation;
     private $customerInformation;
     private $merchantInformation;
+    public $settlementStatus;
 
     /**
      * @return mixed
@@ -156,6 +157,23 @@ class SaleResponseInformation
             $this->merchantInformation=$m;
         }
         return $this->merchantInformation;
+    }
+
+
+    /**
+     * @return mixed
+     */
+    public function getSettlementStatus()
+    {
+        return $this->settlementStatus;
+    }
+
+    /**
+     * @param mixed $saleResponse
+     */
+    public function setSettlementStatus($settlementStatus)
+    {
+        $this->settlementStatus = $settlementStatus;
     }
 
     public static function fromArray($data){
