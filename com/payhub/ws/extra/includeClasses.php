@@ -8,8 +8,7 @@
 $directories = array(
     dirname(__DIR__).DIRECTORY_SEPARATOR.'util',
     dirname(__DIR__).DIRECTORY_SEPARATOR.'model',
-    dirname(__DIR__).DIRECTORY_SEPARATOR.'api',
-    dirname(__DIR__).DIRECTORY_SEPARATOR.'vt'
+    dirname(__DIR__).DIRECTORY_SEPARATOR.'api'
 );
 $files;
 foreach ($directories as $directory) {
