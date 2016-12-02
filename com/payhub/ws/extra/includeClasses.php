@@ -16,6 +16,7 @@ foreach ($directories as $directory) {
     $files[]=$aux;
 }
 foreach($files as $generalPath){
+    sort($generalPath);
     foreach($generalPath as $pathToFile)
     {
         include_once "$pathToFile";

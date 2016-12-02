@@ -6,7 +6,7 @@ Description: This plugin allows you to accept credit card payments through PayHu
 Version: 1.0.12
 Author: PayHub
 */
-$path_to_IncludeClases="/com/payhub/ws/extra/includeClasses.php";
+$path_to_IncludeClases=WP_PLUGIN_DIR . "/" . plugin_basename( dirname(__FILE__)) . "/com/payhub/ws/extra/includeClasses.php";
 include_once $path_to_IncludeClases;
 
 add_action('plugins_loaded', 'woocommerce_payhub_init', 0);
