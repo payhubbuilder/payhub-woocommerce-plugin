@@ -3,8 +3,8 @@ Contributors: EJ Costiniano, Lon Sun, PayHub
 Website: http://payhub.com
 Tags: woocommerce, payment, gateway, credit card, visa, mastercard
 Requires at least: 3.5
-Tested up to: 4.1.1
-Stable tag: 1.0.11 
+Tested up to: 4.6.1
+Stable tag: 1.0.12 
 License: GPLv3 or later
 License URI: http://www.gnu.org/licenses/gpl-3.0.html
 
@@ -15,18 +15,12 @@ This plugin works specifically with the WooCommerce ecommerce plugin.  It allows
 
 == Changelog ==
 
-= 1.0.8 =
-* Initial Release
-
-= 1.0.9 =
-* Released on February 20, 2014
-* Fixed issue on WooCommerce 2.1.x where the results page was not displaying correctly.
-* We now require SSL peer verification when sending a transaction request.
-* Added more helpful information to the read me, such as better configuration instructions and notes on security.
-
-= 1.0.10 =
-* Released on February 25, 2014
-* Minor changes for versioning.
+= 1.0.12 =
+* Released on November 25, 2016
+* Added Refund Method for transactions
+* Improved layout of credit card fields on checkout form.
+* Added new 3rdParty methods for security
+* Other general and minor improvements.
 
 = 1.0.11 =
 * Released on February 26, 2015
@@ -36,6 +30,20 @@ This plugin works specifically with the WooCommerce ecommerce plugin.  It allows
 * Made changes to mitigate "Fatal error: Cannot redeclare supports()" error that was reported.  Was not able to recreate this issue locally.  Will need help validating this fix from users.
 * Improved layout of credit card fields on checkout form.
 * Other general and minor improvements.
+
+= 1.0.10 =
+* Released on February 25, 2014
+* Minor changes for versioning.
+
+= 1.0.9 =
+* Released on February 20, 2014
+* Fixed issue on WooCommerce 2.1.x where the results page was not displaying correctly.
+* We now require SSL peer verification when sending a transaction request.
+* Added more helpful information to the read me, such as better configuration instructions and notes on security.
+
+= 1.0.8 =
+* Initial Release
+
 
 == Upgrade Notice ==
 
