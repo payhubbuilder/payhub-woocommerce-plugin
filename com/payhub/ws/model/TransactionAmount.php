@@ -22,6 +22,7 @@ class TransactionAmount
     public function __construct($amount)
     {
 		$this->amount=number_format($amount, 2, '.', ',');
+        $this->amount = str_replace(array(',', '' ), '',$this->amount );
         //$this->amount = $amount;
        // $this->setTransactionAmount($this->amount,new NumberFormatter($this->CURRENCY_CODE, NumberFormatter::CURRENCY));
     }

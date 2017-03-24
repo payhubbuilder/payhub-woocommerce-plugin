@@ -1,0 +1,105 @@
+=== PayHub Plugin For WooCommerce ===
+Contributors: EJ Costiniano, Lon Sun, PayHub
+Website: http://payhub.com
+Tags: woocommerce, payment, gateway, credit card, visa, mastercard
+Requires at least: 3.5
+Tested up to: 4.6.1
+Stable tag: 1.0.17
+License: GPLv3 or later
+License URI: http://www.gnu.org/licenses/gpl-3.0.html
+
+PayHub gateway plugin for the WooCommerce system.  It allows you to accept credit cards directly from the WooCommerce checkout page. 
+
+== Description ==
+This plugin works specifically with the WooCommerce ecommerce plugin.  It allows you to accept credit card payments through WooCommerce, using PayHub as the payment gateway.  Please note, a PayHub account is required to process transactions.  Contact us using the info below to setup an account.
+
+== Changelog ==
+
+
+= 1.0.17 = 
+* Released 03/23/2017
+* Solved problem with transactions greater than $1000 dollars.
+* Solved issue with "Test Connection" function in Admin.
+
+= 1.0.16 = 
+* Released 02/14/2017
+* Added support for International Credit Cards
+* Solved issue with "Test Connection" function in Admin.
+
+= 1.0.15 = 
+* Released 12/22/2016
+* Adds a new disable email setting to disable the sending of the customer email by not sending the customer's email to the PayHub API
+
+= 1.0.12 =
+* Released on November 25, 2016
+* Added Refund Method for transactions
+* Improved layout of credit card fields on checkout form.
+* Added new 3rdParty methods for security
+* Other general and minor improvements.
+
+= 1.0.11 =
+* Released on February 26, 2015
+* Scrub telephone numbers before sending to PayHub API.
+* Fixed unsupported method issue on WC 2.3.5 that showed up when transactions failed.
+* Improved order note information on transaction failure.
+* Made changes to mitigate "Fatal error: Cannot redeclare supports()" error that was reported.  Was not able to recreate this issue locally.  Will need help validating this fix from users.
+* Improved layout of credit card fields on checkout form.
+* Other general and minor improvements.
+
+= 1.0.10 =
+* Released on February 25, 2014
+* Minor changes for versioning.
+
+= 1.0.9 =
+* Released on February 20, 2014
+* Fixed issue on WooCommerce 2.1.x where the results page was not displaying correctly.
+* We now require SSL peer verification when sending a transaction request.
+* Added more helpful information to the read me, such as better configuration instructions and notes on security.
+
+= 1.0.8 =
+* Initial Release
+
+
+== Upgrade Notice ==
+
+= 1.0.9 =
+This version improves security and fixes a critical issue for users on WooCommerce 2.1.x.  You should upgrade immediately.
+
+== Installation ==
+* Search for the "WooCommerce PayHub Gateway Plugin" via the WordPress Plugins page.
+* Click on the Install Now option and follow the instructions that are presented to you
+
+==Configuration ==
+Once the PayHub plugin is installed, in WordPress Admin:
+
+* Click on WooCommerce Settings, either through the option on the navigation bar on the left, or through the plugin list.
+* For WooCommerce 2.0.x, click on the Payment tab.  For WooCommerce 2.1.x, click on the Checkout Tab.
+* Select PayHub as the default payment processor and save the changes.
+* Click on PayHub Settings button.
+* Enter in your PayHub API credentials n the fields provided.
+
+== How to find your API credentials ==
+* Log into the PayHub VirtualHub site (go to http://payhub.com and click on Login in the top left)
+* Once logged in, click on the Admin navigation link at the top right.
+* Under the General heading, click on the 3rd Party API link.
+* Copy down your Username, Password, and Terminal ID.  Please note the username and password is case sensitive.
+
+== Notes on Security ==
+This plugin requires validation of the host SSL certificate for PayHub servers.  This is important as it greatly reduces the chance of a successful "man in the middle" attack.
+
+If you go through the installation and everything works fine, then you don't have to worry about the rest of this section.  If you are experiencing a problem where you receive a blank error when trying to process cards and the transaction never actually processes then read on...
+
+Since our plugin uses cURL (http://curl.haxx.se/) to send transaction requests, you need to make sure that cURL knows where to find the CA certificate with which to validate our API SSL certs.  This is generally not a problem with hosted setups, but if you have built out your own server then you may find that this is a problem because newer versions of cURL don't include a CA bundle by default.  In this case, if you are using PHP 5.3.7 or greater you can:
+
+*download http://curl.haxx.se/ca/cacert.pem and save it somewhere on your server.
+*update php.ini -- add curl.cainfo = "PATH_TO/cacert.pem"
+
+This solutions was shamelessly borrowed from the Stack Overflow post: http://stackoverflow.com/questions/6400300/php-curl-https-causing-exception-ssl-certificate-problem-verify-that-the-ca-cer.  Gotta love Stack Overflow ;^).
+
+Alternatively, you can dig into the PayHub plugin itself and add the following key/value pair to the $c_opts array: CURLOPT_CAINFO => "payth/to/ca-bundle.pem".  See http://us2.php.net/manual/en/book.curl.php for more info.
+
+== How to get support ==
+If you have any questions you can contact PayHub at:
+(415) 306-9476 from 8AM - 5PM PST M-F
+or email us at wecare@payhub.com
+

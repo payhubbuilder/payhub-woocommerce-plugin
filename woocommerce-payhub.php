@@ -3,9 +3,10 @@
 Plugin Name: PayHub Gateway Plugin for WooCommerce
 Plugin URI: http://developer.payhub.com/
 Description: This plugin allows you to accept credit card payments through PayHub in your WooCommerce storefront.
-Version: 1.0.12
+Version: 1.0.17
 Author: PayHub
 */
+
 $path_to_IncludeClases=WP_PLUGIN_DIR . "/" . plugin_basename( dirname(__FILE__)) . "/com/payhub/ws/extra/includeClasses.php";
 include_once $path_to_IncludeClases;
 
@@ -15,6 +16,7 @@ function woocommerce_payhub_init() {
 
 	if ( ! class_exists( 'WC_Payment_Gateway' ) ) { return; }
 
+	
 	//require_once(WP_PLUGIN_DIR . "/" . plugin_basename( dirname(__FILE__)) . '/class/payhubTransaction.class.php');
 
 	/**
@@ -82,6 +84,7 @@ function woocommerce_payhub_init() {
 			$this->title 			= $this->settings['title'];
 			$this->description 		= $this->settings['description'];
 			$this->demo = $this->settings['demo'];
+            $this->disable_payhub_email = $this->settings['disable_payhub_email'];
 			$this->enabled 			= $this->settings['enabled'];
 			//$this->api_username 	= $this->settings['api_username'];
 			$this->api_password 	= $this->settings['api_password'];
@@ -184,7 +187,13 @@ function woocommerce_payhub_init() {
 					'type' => 'text',
 					'description' => __( 'Get your terminal ID from PayHub.', 'woothemes' ),
 					'default' => '0000'
-					),				
+					),		
+				'disable_payhub_email' => array(
+					'title' => __( 'Disable Email from PayHub System', 'wootheme'),
+					'type' => 'checkbox',
+					'description' => __ ( 'If checked, the email address will not be sent to PayHub, therefore disabling the sending of a receipt from PayHub', 'woothemes'),
+					'default' => 'no'
+					),
 				'api_password_demo' => array(
 					'title' => __( '3rd PartyAPI token for Demo', 'woothemes' ), 
 					'type' => 'text', 
@@ -217,7 +226,7 @@ function woocommerce_payhub_init() {
 		function admin_options() {
 	    	?>
 	    	<h3><?php _e( 'PayHub', 'woothemes' ); ?></h3>
-	    	<p><?php _e( 'Payhub works by adding credit card fields on the checkout and then sending the details to our webservice for verification. You must first have a PayHub Account to accept credit card and debit card payments. Please contact x to setup an account. If you have any questions you can contact us at (415) 306-9476 M-F from 8am - 5 pm PST or email us at wecare@payhub.com</a> anytime.  ', 'woothemes' ); ?></p>
+	    	<p><?php _e( 'Payhub works by adding credit card fields on the checkout and then sending the details to our webservice for verification. You must first have a PayHub Account to accept credit card and debit card payments. Please contact x to setup an account. If you have any questions you can contact us at (800) 944-1399 M-F from 8am - 5 pm PST or email us at wecare@payhub.com</a> anytime.  ', 'woothemes' ); ?></p>
 	    	<table class="form-table">
 	    		<?php $this->generate_settings_html(); ?>
 			</table><!--/.form-table-->
@@ -237,7 +246,8 @@ function woocommerce_payhub_init() {
 		function process_payment( $order_id ) {	
 			global $woocommerce;
 			$order = new WC_Order( $order_id );	
-			$mode = $this->demo;								
+			$mode = $this->demo;
+            $doNotSendCustomerEmailToPayHub = $this->disable_payhub_email;								
 			//Defining data for the SALE transaction
 			// Merchant data (obtained from the payHub Virtual Terminal (3rd party integration)
 			$merchant = new Merchant();
@@ -298,7 +308,9 @@ function woocommerce_payhub_init() {
 				$customer = new Customer();
 				$customer->setFirstName($order->billing_first_name);
 				$customer->setLastName($order->billing_last_name);
-				$customer->setEmailAddress($order->billing_email);
+				if ( $doNotSendCustomerEmailToPayHub == "no" ){
+					$customer->setEmailAddress($order->billing_email);
+				}
 				$customer->setPhoneNumber(preg_replace('/[^0-9]/', '', $order->billing_phone));			
 				$customer->setPhoneType("M");
 
@@ -623,13 +635,13 @@ function payhub_javascript_functions() {
 add_action('wp_ajax_payhub_test_connection', 'payhub_test_connection');
 
 function payhub_test_connection() {	
-		$data = $_POST['data'];
+	$data = $_POST['data'];
 		//Defining data for the SALE transaction
 			// Merchant data (obtained from the payHub Virtual Terminal (3rd party integration)
 		$merchant = new Merchant();
 
 		if ($data['mode'] == "demo") {
-			$WsURL="https://sandbox-api.payhub.com/api/v2/";
+			$WsURL="https://sandbox02-api.payhub.com/api/v2/";
 		} 
 	    else {
 			$WsURL="https://dc1-api.payhub.com/api/v2/";
@@ -640,23 +652,24 @@ function payhub_test_connection() {
 		curl_setopt_array($curl, array(
 		  CURLOPT_URL => $WsURL,
 		  CURLOPT_RETURNTRANSFER => true,
+		  CURLOPT_FOLLOWLOCATION => 1,
 		  CURLOPT_ENCODING => "",
 		  CURLOPT_MAXREDIRS => 10,
 		  CURLOPT_TIMEOUT => 30,
 		  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
 		  CURLOPT_CUSTOMREQUEST => "GET",
+		  CURLOPT_SSL_VERIFYPEER=>0,
 		  CURLOPT_HTTPHEADER => array(
 		    "authorization: Bearer ".$data['token'],
 		    "cache-control: no-cache",
-		    "postman-token: 5f807105-4375-071e-b66f-dccd493b175d"
+		    "content-type: application/json"
 		  ),
 		));
 
 		$response = curl_exec($curl);
 		$httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-	    curl_close($request);
-	    //echo $httpcode;
-	    $data = json_decode($response, true);
+	    curl_close($curl);
+	  
 
 	    if ($httpcode>=200 && $httpcode< 400){
 	        echo json_encode(true);

@@ -67,7 +67,7 @@ class Refund extends WsConnections
      */
     public function getUrl()
     {
-        return $this->url_basePath."refund/";
+        return $this->url_basePath."refund";
     }
 
     /**

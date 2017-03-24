@@ -61,7 +61,7 @@ class Sale extends WsConnections
      */
     public function getUrl()
     {
-        return $this->url_basePath."sale/";
+        return $this->url_basePath."sale";
     }
 
     /**
